@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="zh">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kumusic 酷音乐</title>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+  <style>
+    ::-webkit-scrollbar {
+      background-color: #00000000;
+      height: 7px;
+      width: 7px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background-color: #00000000;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      border-radius: 5px;
+      background-color: #7848ffdd;
+      width: 10px;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: "Segoe UI", sans-serif;
+    }
+
+    body {
+      background: linear-gradient(120deg, #7848ffdd 0%, #2e1966 100%);
+      min-height: 100vh;
+    }
+
+    .container {
+      margin: 0 auto;
+      padding: 2rem;
+    }
+
+    .navbar {
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      padding: 1rem 2rem;
+      border-radius: 15px;
+      margin-bottom: 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      overflow: hidden;
+      gap: 1rem;
+      width: 700px;
+      transition: all 0.3s;
+    }
+
+    .navbar:hover {
+      position: sticky;
+      width: 800px;
+    }
+
+    .logo {
+      width: 200px;
+    }
+
+    .search-box {
+      background: rgba(255, 255, 255, 0.2);
+      border: none;
+      padding: 0.8rem 1.5rem;
+      border-radius: 25px;
+      max-width: 300px;
+      color: white;
+      outline: none;
+      transition: 0.3s;
+    }
+
+    .search-box:focus {
+      background: rgba(255, 255, 255, 0.3);
+    }
+
+    .music-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 1.5rem;
+      z-index: 0;
+    }
+
+    @media (max-width: 304px) {
+      .music-grid {
+        grid-template-columns: repeat(auto-fill, minmax(100%, 1fr));
+      }
+    }
+
+    .music-card {
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(8px);
+      border-radius: 15px;
+      padding: 1.2rem;
+      transition: 0.3s;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+
+    .music-card:hover {
+      transform: translateY(-5px);
+      background: rgba(255, 255, 255, 0.15);
+    }
+
+    .cover {
+      width: 100%;
+      border-radius: 10px;
+    }
+
+    .title {
+      color: white;
+      font-weight: bold;
+      font-size: 1.5rem;
+    }
+
+    .artist {
+      color: rgba(255, 255, 255, 0.8);
+      font-size: 0.9rem;
+      white-space: nowrap;
+    }
+
+    .duration {
+      color: rgba(255, 255, 255, 0.581);
+      font-size: 0.9rem;
+      white-space: nowrap;
+    }
+
+    .control-button {
+      background: #7848ff;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 10px;
+      color: white;
+      margin-top: 1rem;
+      cursor: pointer;
+      transition: 0.3s;
+      width: 100%;
+    }
+
+    .control-button:hover {
+      background: #906dff;
+    }
+
+    .now-playing {
+      position: fixed;
+      bottom: 30px;
+      right: 100px;
+      max-width: 300px;
+      backdrop-filter: blur(10px);
+      padding: 10px;
+      border-radius: 15px;
+      color: white;
+      display: flex;
+      flex-direction: column;
+      z-index: 99;
+      background-color: rgba(185, 177, 201, 0.51);
+    }
+
+    .now-playing-title {
+      font-weight: bold;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      text-align: right;
+    }
+
+    .now-playing-artist {
+      font-size: 0.8rem;
+      opacity: 0.8;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      text-align: right;
+    }
+
+    .global-control {
+      position: fixed;
+      bottom: 30px;
+      right: 30px;
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background: #7848ff;
+      color: white;
+      border: none;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s;
+      overflow: hidden;
+    }
+
+    .global-control:hover {
+      background: #906dff;
+      transform: scale(1.1);
+    }
+
+    .global-control img {
+      width: 30px;
+      height: 30px;
+      object-fit: contain;
+    }
+
+    .audio-element {
+      display: none;
+    }
+
+    .tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      margin-top: 0.5rem;
+    }
+
+    .tag {
+      background: rgba(255, 255, 255, 0.2);
+      color: white;
+      padding: 0.2rem 0.5rem;
+      border-radius: 10px;
+      font-size: 0.7rem;
+      white-space: nowrap;
+    }
+
+    .info-area {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 0.3rem;
+    }
+
+    /* 进度条容器 */
+    .progress-container {
+      margin-top: 8px;
+      width: 100%;
+    }
+
+    /* 进度条背景 */
+    .progress-bar {
+      height: 4px;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 2px;
+      cursor: pointer;
+      margin-bottom: 4px;
+    }
+
+    /* 进度条前景 */
+    .progress {
+      height: 100%;
+      background: #7848ff;
+      border-radius: 2px;
+      transition: width 0.1s;
+    }
+
+    /* 时间显示 */
+    .time-display {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.7rem;
+      opacity: 0.8;
+      color: white;
+    }
+
+    /* 调整now-playing宽度 */
+    .now-playing {
+      width: 250px;
+      padding-bottom: 12px;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="app">
+    <div class="container">
+      <div style="
+            display: flex;
+            justify-content: center;
+            top: 30px;
+            position: sticky;
+          z-index: 1;
+          ">
+        <nav class="navbar">
+          <img src="./image/icon/zh.svg" alt="logo" class="logo" />
+          <input v-model="searchQuery" class="search-box" type="text" placeholder="搜索歌曲、歌手..." />
+        </nav>
+      </div>
+
+      <div class="music-grid">
+        <div class="music-card" v-for="music in filteredMusic" :key="music.id">
+          <div style="
+                aspect-ratio: 1/1;
+                width: 100%;
+                border-radius: 10px;
+                overflow: hidden;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+              ">
+            <img :src="music.cover" @error="handleImageError" class="cover" alt="专辑封面" />
+          </div>
+
+          <div class="info-area">
+            <div class="title">{{ music.title }}</div>
+            <div style="display: flex; gap: 3px;">
+              <div class="artist">{{ music.artist }}</div>
+              <div class="duration">{{ music.formattedDuration || '加载中...' }}</div>
+            </div>
+
+            <div class="tags" v-if="music.tags && music.tags.length">
+              <span class="tag" v-for="tag in music.tags" :key="tag">{{ tag }}</span>
+            </div>
+          </div>
+
+          <div style="display: flex; align-items: center; gap: 5px">
+            <button class="control-button" @click="playMusic(music)">
+              播放
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div v-if="currentTrack"
+      style="position: fixed; bottom: 30px; right: 30px; display: flex; align-items: center; gap: 20px; z-index: 100;">
+      <div class="now-playing">
+        <div class="now-playing-title">{{ currentTrack.title }}</div>
+        <div class="now-playing-artist">{{ currentTrack.artist }}</div>
+
+        <div class="progress-container">
+          <div class="progress-bar" @click="seekAudio">
+            <div class="progress" :style="{ width: progress + '%' }"></div>
+          </div>
+          <div class="time-display">
+            <span>{{ formatTime(currentTime) }}</span>
+            <span>{{ currentTrack.formattedDuration || '加载中...' }}</span>
+          </div>
+        </div>
+      </div>
+
+      <button class="global-control" @click="togglePlay">
+        <img :src="isPlaying ? './image/off.svg' : './image/on.svg'" alt="播放控制">
+      </button>
+    </div>
+
+    <audio ref="audioPlayer" class="audio-element" @timeupdate="updateProgress"></audio>
+  </div>
+
+  <script>
+    const { createApp } = Vue;
+
+    createApp({
+      data() {
+        return {
+          searchQuery: "",
+          currentTrack: null,
+          isPlaying: false,
+          currentTime: 0,
+          progress: 0,
+          musicList: [
+            {
+              id: 1,
+              title: "四点的海棠花未眠",
+              artist: "渡",
+              cover: "https://p2.music.126.net/n_JUJqFExrv0B-cKNSvnhg==/109951170958563213.jpg",
+              audioUrl: "https://music.163.com/song/media/outer/url?id=2681393627.mp3",
+              tags: ["轻音乐", "钢琴", "安静"],
+              formattedDuration: null
+            },
+            {
+              id: 2,
+              title: "唯一",
+              artist: "G.E.M.邓紫棋",
+              cover: "https://p1.music.126.net/aJWtwvdYRXvKUpAE2C6NoA==/109951168919708423.jpg",
+              audioUrl: "https://music.163.com/song/media/outer/url?id=2083785152.mp3",
+              tags: ["流行", "情歌", "华语"],
+              formattedDuration: null
+            },
+            {
+              id: 3,
+              title: "于是",
+              artist: "郑润泽",
+              cover: "https://p2.music.126.net/PEGvmO3OqgGOkx4m9qxAJA==/109951163478499713.jpg",
+              audioUrl: "https://music.163.com/song/media/outer/url?id=1303464858.mp3",
+              tags: ["流行", "抒情"],
+              formattedDuration: null
+            },
+          ],
+        };
+      },
+      computed: {
+        filteredMusic() {
+          return this.musicList.filter((music) => {
+            const query = this.searchQuery.toLowerCase();
+            return (
+              music.title.toLowerCase().includes(query) ||
+              music.artist.toLowerCase().includes(query) ||
+              (music.tags &&
+                music.tags.some(tag =>
+                  tag.toLowerCase().includes(query)
+                )
+              )
+            );
+          });
+        },
+      },
+      methods: {
+        handleImageError(e) {
+          e.target.src = "./image/error.svg";
+          e.target.onerror = null;
+        },
+        playMusic(music) {
+          this.currentTrack = music;
+          const audio = this.$refs.audioPlayer;
+          
+          // 如果还没有加载过音频时长，则加载
+          if (!music.formattedDuration) {
+            this.loadAudioDuration(music);
+          }
+          
+          audio.src = music.audioUrl;
+          audio.play()
+            .then(() => {
+              this.isPlaying = true;
+            })
+            .catch(e => {
+              console.error('播放失败:', e);
+            });
+        },
+        loadAudioDuration(music) {
+          const audio = new Audio();
+          audio.src = music.audioUrl;
+          audio.onloadedmetadata = () => {
+            music.formattedDuration = this.formatTime(audio.duration);
+          };
+          audio.onerror = () => {
+            music.formattedDuration = '未知';
+          };
+        },
+        togglePlay() {
+          const audio = this.$refs.audioPlayer;
+          if (this.isPlaying) {
+            audio.pause();
+          } else {
+            audio.play();
+          }
+          this.isPlaying = !this.isPlaying;
+        },
+        updateProgress() {
+          const audio = this.$refs.audioPlayer;
+          if (audio.duration) {
+            this.currentTime = audio.currentTime;
+            this.progress = (audio.currentTime / audio.duration) * 100;
+            
+            // 更新当前曲目的格式化时长（如果尚未设置）
+            if (this.currentTrack && !this.currentTrack.formattedDuration) {
+              this.currentTrack.formattedDuration = this.formatTime(audio.duration);
+            }
+          }
+        },
+        seekAudio(e) {
+          const audio = this.$refs.audioPlayer;
+          const rect = e.currentTarget.getBoundingClientRect();
+          const pos = (e.clientX - rect.left) / rect.width;
+          audio.currentTime = pos * audio.duration;
+        },
+        formatTime(seconds) {
+          if (isNaN(seconds)) return "0:00";
+          const mins = Math.floor(seconds / 60);
+          const secs = Math.floor(seconds % 60);
+          return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+        }
+      },
+      mounted() {
+        // 预加载所有音频的时长信息
+        this.musicList.forEach(music => {
+          this.loadAudioDuration(music);
+        });
+      }
+    }).mount("#app");
+  </script>
+</body>
+
+</html>
